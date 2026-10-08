@@ -28,4 +28,4 @@ jobs:
         run: pip install pyspark==3.5.1 delta-spark==3.2.0 pytest pandas pyarrow
 
       - name: Run tests
-        run: pytest -q
+        run: python -m pytest -q
