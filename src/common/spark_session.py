@@ -2,6 +2,7 @@
 
 import os
 import sys
+from pathlib import Path
 
 from delta import configure_spark_with_delta_pip
 from pyspark.sql import SparkSession
@@ -23,6 +24,9 @@ def get_spark(app_name: str = "tripflow") -> SparkSession:
             os.environ["HADOOP_HOME"] = hadoop_home
             os.environ["PATH"] = os.path.join(hadoop_home, "bin") + os.pathsep + os.environ.get("PATH", "")
 
+    spark_tmp = Path(__file__).resolve().parents[2] / ".spark_tmp"
+    spark_tmp.mkdir(parents=True, exist_ok=True)
+
     builder = (
         SparkSession.builder.master("local[*]")
         .appName(app_name)
@@ -34,6 +38,7 @@ def get_spark(app_name: str = "tripflow") -> SparkSession:
         .config("spark.driver.memory", "4g")
         .config("spark.sql.shuffle.partitions", "8")
         .config("spark.sql.session.timeZone", "UTC")
+        .config("spark.local.dir", str(spark_tmp))
         .config("spark.ui.showConsoleProgress", "false")
     )
     spark = configure_spark_with_delta_pip(builder).getOrCreate()

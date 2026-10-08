@@ -10,3 +10,12 @@ BRONZE_DIR = PROJECT_ROOT / "data" / "bronze"
 SILVER_DIR = PROJECT_ROOT / "data" / "silver"
 GOLD_DIR = PROJECT_ROOT / "data" / "gold"
 QUARANTINE_DIR = PROJECT_ROOT / "data" / "quarantine"
+
+# Add a "YYYY-MM" entry to extend the backfill.
+MONTHS = ["2024-01", "2024-02", "2024-03"]
+
+TRIP_URL_TEMPLATE = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month}.parquet"
+ZONE_LOOKUP_URL = "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv"
+
+BRONZE_TRIPS = BRONZE_DIR / "trips"
+BRONZE_ZONES = BRONZE_DIR / "zones"

@@ -9,3 +9,4 @@ derby.log
 .pytest_cache/
 .idea/
 .vscode/
+.spark_tmp/
