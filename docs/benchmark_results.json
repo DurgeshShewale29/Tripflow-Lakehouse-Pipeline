@@ -1,0 +1,37 @@
+{
+  "storage": {
+    "baseline": {
+      "files": 200,
+      "size_bytes": 296130558
+    },
+    "optimized": {
+      "files": 3,
+      "size_bytes": 249346465
+    }
+  },
+  "queries": [
+    {
+      "query": "Q1",
+      "baseline_s": 2.606,
+      "optimized_s": 0.839,
+      "speedup_x": 3.11
+    },
+    {
+      "query": "Q2",
+      "baseline_s": 1.91,
+      "optimized_s": 0.842,
+      "speedup_x": 2.27
+    },
+    {
+      "query": "Q3",
+      "baseline_s": 6.2,
+      "optimized_s": 2.428,
+      "speedup_x": 2.55
+    }
+  ],
+  "total_baseline_s": 10.716,
+  "total_optimized_s": 4.109,
+  "notes": {
+    "Q3": "Q3 uses the optimized copy for both timings. baseline_s is the join with no broadcast hint; optimized_s is broadcast(zones)."
+  }
+}
