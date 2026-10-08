@@ -19,3 +19,7 @@ ZONE_LOOKUP_URL = "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.c
 
 BRONZE_TRIPS = BRONZE_DIR / "trips"
 BRONZE_ZONES = BRONZE_DIR / "zones"
+
+SILVER_TRIPS = SILVER_DIR / "trips"
+SILVER_RECON = SILVER_DIR / "recon"
+QUARANTINE_TRIPS = QUARANTINE_DIR / "trips"
