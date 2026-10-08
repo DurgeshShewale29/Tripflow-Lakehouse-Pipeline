@@ -3,8 +3,13 @@
 from pyspark.sql import DataFrame, functions as F
 
 
-def with_reject_reason(trips: DataFrame, zones: DataFrame) -> DataFrame:
+def with_reject_reason(trips: DataFrame, zones: DataFrame | list[int]) -> DataFrame:
     """Return Bronze trips with reject_reason set, or null when the row is valid."""
+    if not isinstance(zones, DataFrame):
+        zones = trips.sparkSession.createDataFrame(
+            [(int(zone_id),) for zone_id in zones],
+            "LocationID int",
+        )
     location_ids = (
         zones.select(F.col("LocationID").cast("int").alias("location_id"))
         .where(F.col("location_id").isNotNull())

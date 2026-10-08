@@ -12,7 +12,7 @@ os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 
-def get_spark(app_name: str = "tripflow") -> SparkSession:
+def get_spark(app_name: str = "tripflow", *, testing: bool | None = None) -> SparkSession:
     # Prefer the local JDK and Hadoop install when they are present.
     if os.name == "nt":
         java_home = r"C:\Program Files\Java\jdk-21.0.12.1"
@@ -27,16 +27,23 @@ def get_spark(app_name: str = "tripflow") -> SparkSession:
     spark_tmp = Path(__file__).resolve().parents[2] / ".spark_tmp"
     spark_tmp.mkdir(parents=True, exist_ok=True)
 
+    # Tests pass testing=True, or set TRIPFLOW_SPARK_TESTING=1, for a small session.
+    if testing is None:
+        testing = os.environ.get("TRIPFLOW_SPARK_TESTING") == "1"
+    master = "local[2]" if testing else "local[*]"
+    driver_memory = "1g" if testing else "4g"
+    shuffle_partitions = "2" if testing else "8"
+
     builder = (
-        SparkSession.builder.master("local[*]")
+        SparkSession.builder.master(master)
         .appName(app_name)
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
         .config(
             "spark.sql.catalog.spark_catalog",
             "org.apache.spark.sql.delta.catalog.DeltaCatalog",
         )
-        .config("spark.driver.memory", "4g")
-        .config("spark.sql.shuffle.partitions", "8")
+        .config("spark.driver.memory", driver_memory)
+        .config("spark.sql.shuffle.partitions", shuffle_partitions)
         .config("spark.sql.session.timeZone", "UTC")
         .config("spark.local.dir", str(spark_tmp))
         .config("spark.ui.showConsoleProgress", "false")

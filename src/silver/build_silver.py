@@ -40,6 +40,21 @@ _RECON_SCHEMA = StructType(
 )
 
 
+def drop_duplicate_trips(frame):
+    """Drop duplicate trips on the bronze business key."""
+    return frame.dropDuplicates(_DEDUP_COLUMNS)
+
+
+def reconciliation_holds(
+    bronze_rows: int,
+    silver_rows: int,
+    quarantined_rows: int,
+    duplicates_removed: int,
+) -> bool:
+    """True when every bronze row is silver, quarantined, or a removed duplicate."""
+    return bronze_rows == silver_rows + quarantined_rows + duplicates_removed
+
+
 def _save_month(spark, frame, path: str, month: str, partition: bool) -> None:
     """Create the table on first write; later runs replace only this source_month."""
     writer = frame.write.format("delta").mode("overwrite")
@@ -143,13 +158,13 @@ def _build_month(spark, zones, month: str) -> None:
         )
         valid_rows = valid.count()
         quarantined_rows = quarantine.count()
-        deduped = valid.drop("reject_reason").dropDuplicates(_DEDUP_COLUMNS).cache()
+        deduped = drop_duplicate_trips(valid.drop("reject_reason")).cache()
         duplicates_removed = valid_rows - deduped.count()
         silver = _to_silver(deduped, zones)
         silver_rows = silver.count()
 
         # bronze_rows must equal the rows kept, rejected, and removed as duplicates.
-        if bronze_rows != silver_rows + quarantined_rows + duplicates_removed:
+        if not reconciliation_holds(bronze_rows, silver_rows, quarantined_rows, duplicates_removed):
             logger.error(
                 "reconciliation failed for %s: bronze_rows=%s silver_rows=%s quarantined_rows=%s duplicates_removed=%s",
                 month,

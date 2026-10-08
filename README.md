@@ -25,3 +25,14 @@ sql/
 docs/
 .github/workflows/
 ```
+
+## Testing
+
+From the project root, with the virtual environment active:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+GitHub Actions runs the same `pytest -q` suite on Ubuntu.
+
