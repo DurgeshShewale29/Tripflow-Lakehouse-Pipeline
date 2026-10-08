@@ -23,3 +23,7 @@ BRONZE_ZONES = BRONZE_DIR / "zones"
 SILVER_TRIPS = SILVER_DIR / "trips"
 SILVER_RECON = SILVER_DIR / "recon"
 QUARANTINE_TRIPS = QUARANTINE_DIR / "trips"
+
+GOLD_REVENUE_ZONE_HOUR = GOLD_DIR / "revenue_by_zone_hour"
+GOLD_DAILY_SUMMARY = GOLD_DIR / "daily_summary"
+GOLD_PAYMENT_BOROUGH = GOLD_DIR / "payment_borough"
