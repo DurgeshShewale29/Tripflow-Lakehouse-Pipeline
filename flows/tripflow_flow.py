@@ -74,6 +74,8 @@ def tripflow_pipeline(skip_download: bool = False, months: list[str] | None = No
     steps.append(("ingest_trips", "src.bronze.ingest_trips", None))
     steps.append(("load_postgres_source", "src.bronze.load_postgres_source", None))
     steps.append(("ingest_postgres", "src.bronze.ingest_postgres", None))
+    steps.append(("export_json_source", "src.bronze.export_json_source", None))
+    steps.append(("ingest_json", "src.bronze.ingest_json", None))
     steps.append(("build_silver", "src.silver.build_silver", None))
     gold_args = ["--months", *months] if months else None
     steps.append(("build_gold", "src.gold.build_gold", gold_args))

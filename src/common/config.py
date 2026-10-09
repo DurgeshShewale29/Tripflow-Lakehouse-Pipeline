@@ -6,6 +6,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 RAW_DIR = PROJECT_ROOT / "data" / "raw"
+RAW_JSON_DIR = RAW_DIR / "json"
 BRONZE_DIR = PROJECT_ROOT / "data" / "bronze"
 SILVER_DIR = PROJECT_ROOT / "data" / "silver"
 GOLD_DIR = PROJECT_ROOT / "data" / "gold"
@@ -14,6 +15,7 @@ QUARANTINE_DIR = PROJECT_ROOT / "data" / "quarantine"
 # Add a "YYYY-MM" entry to extend the backfill.
 MONTHS = ["2024-01", "2024-02", "2024-03"]
 EXTRA_MONTH_PG = "2024-04"
+EXTRA_MONTH_JSON = "2024-05"
 
 TRIP_URL_TEMPLATE = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month}.parquet"
 ZONE_LOOKUP_URL = "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv"
