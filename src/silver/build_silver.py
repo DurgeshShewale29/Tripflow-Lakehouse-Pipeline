@@ -9,7 +9,6 @@ from pyspark.sql.types import LongType, StringType, StructField, StructType
 from src.common.config import (
     BRONZE_TRIPS,
     BRONZE_ZONES,
-    MONTHS,
     QUARANTINE_TRIPS,
     SILVER_RECON,
     SILVER_TRIPS,
@@ -55,11 +54,13 @@ def reconciliation_holds(
     return bronze_rows == silver_rows + quarantined_rows + duplicates_removed
 
 
-def _save_month(spark, frame, path: str, month: str, partition: bool) -> None:
+def _save_month(spark, frame, path: str, month: str, partition: bool, merge_schema: bool = False) -> None:
     """Create the table on first write; later runs replace only this source_month."""
     writer = frame.write.format("delta").mode("overwrite")
     if DeltaTable.isDeltaTable(spark, path):
         writer = writer.option("replaceWhere", f"source_month = '{month}'")
+    if merge_schema:
+        writer = writer.option("mergeSchema", "true")
     if partition:
         writer = writer.partitionBy("source_month")
     writer.save(path)
@@ -108,6 +109,7 @@ def _to_silver(trips, zones):
         F.col("Airport_fee").alias("airport_fee"),
         "source_month",
         "batch_id",
+        "source_system",
     )
     enriched = renamed.join(F.broadcast(pickup_zones), "pu_location_id", "left").join(
         F.broadcast(dropoff_zones), "do_location_id", "left"
@@ -141,6 +143,7 @@ def _to_silver(trips, zones):
         "dropoff_borough",
         "source_month",
         "batch_id",
+        "source_system",
         F.current_timestamp().alias("silver_ts"),
     )
 
@@ -175,8 +178,8 @@ def _build_month(spark, zones, month: str) -> None:
             )
             raise RuntimeError(f"reconciliation failed for {month}")
 
-        _save_month(spark, quarantine, QUARANTINE_TRIPS.as_posix(), month, partition=True)
-        _save_month(spark, silver, SILVER_TRIPS.as_posix(), month, partition=True)
+        _save_month(spark, quarantine, QUARANTINE_TRIPS.as_posix(), month, partition=True, merge_schema=True)
+        _save_month(spark, silver, SILVER_TRIPS.as_posix(), month, partition=True, merge_schema=True)
         recon = spark.createDataFrame(
             [(month, bronze_rows, silver_rows, quarantined_rows, duplicates_removed)],
             schema=_RECON_SCHEMA,
@@ -227,12 +230,27 @@ def _log_summary(spark) -> None:
         logger.info("%s %s", row.reject_reason, row["count"])
 
 
+def _bronze_months(spark) -> list[str]:
+    rows = (
+        spark.read.format("delta")
+        .load(BRONZE_TRIPS.as_posix())
+        .select("source_month")
+        .distinct()
+        .orderBy("source_month")
+        .collect()
+    )
+    return [row.source_month for row in rows]
+
+
 def build_silver(spark=None) -> None:
     own_spark = spark is None
     spark = spark or get_spark()
     try:
+        if not DeltaTable.isDeltaTable(spark, BRONZE_TRIPS.as_posix()):
+            logger.info("no bronze trips table to build")
+            return
         zones = spark.read.format("delta").load(BRONZE_ZONES.as_posix())
-        for month in MONTHS:
+        for month in _bronze_months(spark):
             _build_month(spark, zones, month)
         _log_summary(spark)
     finally:

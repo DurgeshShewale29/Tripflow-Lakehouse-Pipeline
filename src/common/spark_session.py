@@ -48,6 +48,9 @@ def get_spark(app_name: str = "tripflow", *, testing: bool | None = None) -> Spa
         .config("spark.local.dir", str(spark_tmp))
         .config("spark.ui.showConsoleProgress", "false")
     )
-    spark = configure_spark_with_delta_pip(builder).getOrCreate()
+    spark = configure_spark_with_delta_pip(
+        builder,
+        extra_packages=["org.postgresql:postgresql:42.7.3"],
+    ).getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
     return spark

@@ -53,10 +53,30 @@ def _loaded_months(spark) -> set[str]:
     return {row.source_month for row in rows}
 
 
+def ensure_source_system(spark) -> None:
+    """Add source_system once and mark rows loaded before this column existed."""
+    table_path = BRONZE_TRIPS.as_posix()
+    if not DeltaTable.isDeltaTable(spark, table_path):
+        return
+    current = spark.read.format("delta").load(table_path)
+    if "source_system" not in current.columns:
+        spark.sql(f"ALTER TABLE delta.`{table_path}` ADD COLUMNS (source_system STRING)")
+        current = spark.read.format("delta").load(table_path)
+    has_null = current.where(F.col("source_system").isNull()).limit(1).count() > 0
+    if not has_null:
+        return
+    logger.info("setting source_system=parquet on existing bronze rows")
+    DeltaTable.forPath(spark, table_path).update(
+        condition="source_system IS NULL",
+        set={"source_system": F.lit("parquet")},
+    )
+
+
 def ingest_trips(spark=None) -> None:
     own_spark = spark is None
     spark = spark or get_spark()
     try:
+        ensure_source_system(spark)
         loaded = _loaded_months(spark)
         batch_id = str(uuid.uuid4())
         table_path = BRONZE_TRIPS.as_posix()
@@ -70,14 +90,16 @@ def ingest_trips(spark=None) -> None:
             logger.info("ingesting %s", source.name)
             frame = _align_schema(spark.read.parquet(source.as_posix()))
             frame = (
-                frame.withColumn("ingest_ts", F.current_timestamp())
+                frame                .withColumn("ingest_ts", F.current_timestamp())
                 .withColumn("source_file", F.lit(source.name))
                 .withColumn("source_month", F.lit(month))
                 .withColumn("batch_id", F.lit(batch_id))
+                .withColumn("source_system", F.lit("parquet"))
             )
             (
                 frame.write.format("delta")
                 .mode("append")
+                .option("mergeSchema", "true")
                 .partitionBy("source_month")
                 .save(table_path)
             )

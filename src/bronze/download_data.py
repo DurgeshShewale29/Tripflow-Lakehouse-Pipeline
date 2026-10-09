@@ -6,7 +6,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from src.common.config import MONTHS, RAW_DIR, TRIP_URL_TEMPLATE, ZONE_LOOKUP_URL
+from src.common.config import EXTRA_MONTH_PG, MONTHS, RAW_DIR, TRIP_URL_TEMPLATE, ZONE_LOOKUP_URL
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,10 @@ def _targets() -> list[tuple[str, Path]]:
         (TRIP_URL_TEMPLATE.format(month=month), RAW_DIR / f"yellow_tripdata_{month}.parquet")
         for month in MONTHS
     ]
+    # April is the Postgres sample month, not part of the parquet MONTHS backfill.
+    files.append(
+        (TRIP_URL_TEMPLATE.format(month=EXTRA_MONTH_PG), RAW_DIR / f"yellow_tripdata_{EXTRA_MONTH_PG}.parquet")
+    )
     files.append((ZONE_LOOKUP_URL, RAW_DIR / "taxi_zone_lookup.csv"))
     return files
 
